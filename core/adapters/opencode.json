@@ -1,0 +1,16 @@
+{
+  "name": "opencode",
+  "display": "OpenCode",
+  "detect": {
+    "commands": ["opencode"],
+    "paths": ["~/.config/opencode"]
+  },
+  "docs_url": "https://opencode.ai",
+  "sync": {
+    "agents_dir": "~/.config/opencode/agents",
+    "skills_dir": "~/.config/opencode/skills",
+    "plugin": "~/.config/opencode/plugins/episteme.ts"
+  },
+  "project_contract": "AGENTS.md",
+  "notes": "OpenCode V2 has no hook table in config, so the gate travels as a plugin: plugins/episteme.ts spawns block_dangerous.py, reasoning_surface_guard.py and calibration_telemetry.py with a Claude-shaped payload. The AGENTS.md block is a managed region — ~/.config/opencode/AGENTS.md is operator-authored and is never overwritten."
+}

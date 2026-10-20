@@ -1896,6 +1896,7 @@ def _sync_user_runtime(governance_mode: str = "balanced") -> None:
     from .adapters import hermes as _hermes
     from .adapters import omo as _omo
     from .adapters import omx as _omx
+    from .adapters import opencode as _opencode
 
     # Deploy-on-merge: refresh release-coupled facts in tracked docs before
     # mounting the runtime, so a synced surface never carries a stale version.
@@ -1921,6 +1922,7 @@ def _sync_user_runtime(governance_mode: str = "balanced") -> None:
     codex_synced = _codex.sync()
     omo_synced = _omo.sync(governance_mode)
     omx_synced = _omx.sync(governance_mode)
+    opencode_synced = _opencode.sync()
 
     print("Synced user runtime:")
     print(f"  - Claude: {HOME / '.claude'}")
@@ -1938,6 +1940,8 @@ def _sync_user_runtime(governance_mode: str = "balanced") -> None:
         print(f"  - OMO: {HOME / '.omo'}")
     if omx_synced:
         print(f"  - OMX: {HOME / '.omx'}")
+    if opencode_synced:
+        print(f"  - OpenCode: {HOME / '.config' / 'opencode'} (plugin + managed region in AGENTS.md)")
 
 
 # ---------------------------------------------------------------------------
