@@ -45,6 +45,25 @@ function normaliseArgs(input: unknown): Record<string, unknown> {
   return typeof file === "string" ? { ...args, file_path: file } : args
 }
 
+/**
+ * Where the operation runs, which is not where the session was opened.
+ * The gate resolves `.episteme` upward from this cwd, so passing the
+ * session directory makes a repo nested inside it permanently blocked:
+ * the surface is written in the repo and looked for one level up.
+ * `shell` carries `workdir`; file tools carry an absolute path whose
+ * parent is the closest anchor we have.
+ */
+function opCwd(input: unknown, fallback: string): string {
+  const args = (input ?? {}) as Record<string, unknown>
+  const workdir = args.workdir ?? args.cwd
+  if (typeof workdir === "string" && workdir) return workdir
+  const file = args.file_path ?? args.filePath ?? args.path
+  if (typeof file === "string" && file.startsWith("/")) {
+    return file.slice(0, file.lastIndexOf("/")) || "/"
+  }
+  return fallback
+}
+
 /** Claude-shaped PreToolUse payload, or null for tools the gate ignores. */
 function payload(
   tool: string | undefined,
@@ -102,10 +121,11 @@ async function setup(ctx: any) {
   })
 
   await ctx.tool.hook("execute.before", async (event: any) => {
-    const body = payload(event?.tool, event?.sessionID, event?.input, cwd)
+    const target = opCwd(event?.input, cwd)
+    const body = payload(event?.tool, event?.sessionID, event?.input, target)
     if (!body) return
     for (const script of ["block_dangerous.py", "reasoning_surface_guard.py"]) {
-      const result = await run(script, body, cwd)
+      const result = await run(script, body, target)
       if (result.code === 2) {
         throw new Error(result.stderr.trim() || `episteme: ${script} blocked this call`)
       }
@@ -114,9 +134,10 @@ async function setup(ctx: any) {
 
   await ctx.tool.hook("execute.after", async (event: any) => {
     if (event?.status !== "completed") return
-    const body = payload(event?.tool, event?.sessionID, event?.input, cwd)
+    const target = opCwd(event?.input, cwd)
+    const body = payload(event?.tool, event?.sessionID, event?.input, target)
     if (!body) return
-    await run("calibration_telemetry.py", body, cwd)
+    await run("calibration_telemetry.py", body, target)
   })
 }
 
